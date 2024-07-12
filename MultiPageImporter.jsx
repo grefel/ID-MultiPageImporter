@@ -1,4 +1,4 @@
-﻿// MultiPageImporter2.6.2 jsx
+﻿// MultiPageImporter2.7-gf jsx
 // An InDesign CS4 JavaScript
 // 28 MAR 2010
 // Copyright (C) 2008-2009 Scott Zanelli. lonelytreesw@gmail.com
@@ -26,12 +26,13 @@
 // Version 2.6: Fixed a bug that would display a misleading error message ("This value would cause one or more objects to leave the pasteboard.") - mostly in cases where the default font size for a new text box would cause a 20x20 document units box to overflow
 // Version 2.6.1: Added new document scale for easy page scaling and tag all placed frames
 // Version 2.6.2: Added very basic support for .ai files that are written as pdf compatible files - basically using the pdf code for them - allows for automatically placing multi-artboard AIs
+// Version 2.6.7: Add ScriptFolder Path for debugging. Optimised Debug.
+
 
 // Get app version and save old interation setting.
 // Some installs have the interaction level set to not show any dialogs.
 // This is used to insure that the dialog is shown.
 
-//#target indesign;
 
 var appVersion = parseInt(app.version);
 // Only works in CS3+
@@ -84,7 +85,7 @@ var positionValuesAll = ["Top left", "Top center", "Top right", "Center left",  
 var noPDFError = true;
 
 // Look for and read prefs file
-prefsFile = File((Folder(app.activeScript)).parent + "/MultiPageImporterPrefs2.5.txt");
+prefsFile = File(getScriptFolderPath() + "/MultiPageImporterPrefs2.5.txt");
 if(!prefsFile.exists)
 {
 	savePrefs(true);
@@ -1779,4 +1780,23 @@ function mapPGValidator()
 		// Unchecked, enable reverseOrder checkbox
 		dLog.reverseOrder.enabled = true;
 	}
+}
+
+
+/** Get Filepath from current script  
+ * @returns {Folder} script folder  
+*/
+function getScriptFolderPath() {
+    var skriptPath;
+    try {
+        skriptPath = app.activeScript.parent;
+    }
+    catch (e) {
+        /* We're running from the VSC */
+        skriptPath = File(e.fileName).parent;
+    }
+    if (skriptPath.toString().match(/\/lib$/)) {
+        skriptPath = skriptPath.parent;
+    }
+    return skriptPath;
 }
