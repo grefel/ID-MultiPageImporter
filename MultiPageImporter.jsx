@@ -1,4 +1,4 @@
-﻿// MultiPageImporter 2.7.0-gf 
+﻿// MultiPageImporter 2.7.1-gf 
 // An InDesign CS4 JavaScript
 // 28 MAR 2010
 // Copyright (C) 2008-2009 Scott Zanelli. lonelytreesw@gmail.com
@@ -27,6 +27,7 @@
 // Version 2.6.1: Added new document scale for easy page scaling and tag all placed frames
 // Version 2.6.2: Added very basic support for .ai files that are written as pdf compatible files - basically using the pdf code for them - allows for automatically placing multi-artboard AIs
 // Version 2.7.0-gf: Add ScriptFolder Path for debugging. Optimised Debug.
+// Version 2.7.1-gf: Fix positioning Bug from ID
 
 
 // Get app version and save old interation setting.
@@ -68,6 +69,7 @@ var positionType = 4; // 4 = center
 
 // Do not change anything after this line!
 // removed 6/25/08: var indUpdateType = 0;
+var createdRectangles = [];
 var cropType = 0;
 var PDF_DOC = "PDF";
 var IND_DOC = "InDesign";
@@ -83,7 +85,9 @@ var positionValuesAll = ["Top left", "Top center", "Top right", "Center left", "
 var noPDFError = true;
 
 // Look for and read prefs file
-prefsFile = File(getScriptFolderPath() + "/MultiPageImporterPrefs2.5.txt");
+var scriptFolderPath = getScriptFolderPath();
+
+prefsFile = File(scriptFolderPath + "/MultiPageImporterPrefs2.5.txt");
 if (!prefsFile.exists) {
 	savePrefs(true);
 }
@@ -450,12 +454,16 @@ else {
 // Kill the Object style
 tempObjStyle.remove();
 
+for (var i = 0; i < createdRectangles.length; i++) {
+	createdRectangles[i].rect.geometricBounds = createdRectangles[i].gb;
+	createdRectangles[i].rect.graphics[0].geometricBounds = createdRectangles[i].graphics_gb;
+}
+
 // Save prefs and then restore original app/doc settings
 savePrefs(false);
 restoreDefaults(true);
 
 // THE END OF EXECUTION
-exit();
 
 // Place the requested pages in the document
 function addPages(docStartPG, startPG, endPG) {
@@ -463,6 +471,19 @@ function addPages(docStartPG, startPG, endPG) {
 	var firstTime = true;
 	var addedAPage = false;
 	var zeroBasedDocPgCnt = docPgCount - 1;
+
+
+	// var dok = app.activeDocument;
+	// var oStyleLeft = dok.objectStyles.itemByName("mpi-left");
+	// if (!oStyleLeft.isValid) {
+	// 	oStyleLeft = dok.objectStyles.add({ name: "mpi-left" });
+	// }
+	// oStyleLeft.strokeWeight = 0;
+	// var oStyleRight = dok.objectStyles.itemByName("mpi-right");
+	// if (!oStyleRight.isValid) {
+	// 	oStyleRight = dok.objectStyles.add({ name: "mpi-right" });
+	// }
+	// oStyleRight.strokeWeight = 0;
 
 	for (i = docStartPG - 1, currentInputDocPg = startPG; currentInputDocPg <= endPG; currentInputDocPg++, i++) {
 
@@ -577,6 +598,23 @@ function addPages(docStartPG, startPG, endPG) {
 
 		// Release the placed page from the text box and then delete the text box (clean up)
 		theRect.anchoredObjectSettings.releaseAnchoredObject();
+
+		// $.writeln(theRect.geometricBounds[3]- theRect.geometricBounds[1])
+		// $.writeln(theRect.allGraphics[0].verticalScale  + " x " + theRect.allGraphics[0].horizontalScale);
+
+		createdRectangles.push({
+			rect: theRect,
+			gb: theRect.geometricBounds,
+			graphics_gb: theRect.allGraphics[0].geometricBounds,
+		})
+
+		// if (theDoc.pages[i].side == PageSideOptions.LEFT_HAND) {
+		// 	theRect.appliedObjectStyle = oStyleLeft;
+		// }
+		// else {
+		// 	theRect.appliedObjectStyle = oStyleRight;
+		// }
+
 		TB.remove();
 
 		firstTime = false;
